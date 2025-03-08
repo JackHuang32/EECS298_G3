@@ -45,7 +45,9 @@ class Net(torch.nn.Module):
         x, edge_index, _, batch, _ = self.pool3(x, edge_index, None, batch)
         x3 = torch.cat([gmp(x, batch), gap(x, batch)], dim=1)
 
-        x = x1 + x2 + x3
+        # min_size = min(x1.shape[0], x2.shape[0], x3.shape[0])  # 找到最小 batch size
+        # x1, x2, x3 = x1[:min_size], x2[:min_size], x3[:min_size]  # 截取相同長度
+        x = x1 + x2 + x3  # 相加
 
         x = F.relu(self.lin1(x))
         x = F.dropout(x, p=self.dropout_ratio, training=self.training)

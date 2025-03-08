@@ -14,6 +14,7 @@ PyTorch implementation of [Self-Attention Graph Pooling](https://arxiv.org/abs/1
 ## Usage
 
 ```python main.py```
+```sbatch train.sub```
 
 
 ## Cite

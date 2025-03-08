@@ -3,7 +3,6 @@ from torch_geometric.nn import GCNConv
 from torch_geometric.nn import GraphConv, TopKPooling
 from torch_geometric.nn import global_mean_pool as gap, global_max_pool as gmp
 import torch.nn.functional as F
-from layers import SAGPool
 
 
 
@@ -20,11 +19,11 @@ class Net(torch.nn.Module):
         self.dropout_ratio = args.dropout_ratio
         
         self.conv1 = GCNConv(self.num_features, self.nhid)
-        self.pool1 = SAGPool(self.nhid, ratio=self.pooling_ratio)
+        self.pool1 = TopKPooling(self.nhid, ratio=self.pooling_ratio)
         self.conv2 = GCNConv(self.nhid, self.nhid)
-        self.pool2 = SAGPool(self.nhid, ratio=self.pooling_ratio)
+        self.pool2 = TopKPooling(self.nhid, ratio=self.pooling_ratio)
         self.conv3 = GCNConv(self.nhid, self.nhid)
-        self.pool3 = SAGPool(self.nhid, ratio=self.pooling_ratio)
+        self.pool3 = TopKPooling(self.nhid, ratio=self.pooling_ratio)
 
         self.lin1 = torch.nn.Linear(self.nhid*2, self.nhid)
         self.lin2 = torch.nn.Linear(self.nhid, self.nhid//2)
@@ -34,20 +33,18 @@ class Net(torch.nn.Module):
         x, edge_index, batch = data.x, data.edge_index, data.batch
 
         x = F.relu(self.conv1(x, edge_index))
-        x, edge_index, _, batch, _ = self.pool1(x, edge_index, None, batch)
+        x, edge_index, _, batch,_ ,_ = self.pool1(x, edge_index, None, batch)
         x1 = torch.cat([gmp(x, batch), gap(x, batch)], dim=1)
 
         x = F.relu(self.conv2(x, edge_index))
-        x, edge_index, _, batch, _ = self.pool2(x, edge_index, None, batch)
+        x, edge_index, _, batch,_ ,_ = self.pool2(x, edge_index, None, batch)
         x2 = torch.cat([gmp(x, batch), gap(x, batch)], dim=1)
 
         x = F.relu(self.conv3(x, edge_index))
-        x, edge_index, _, batch, _ = self.pool3(x, edge_index, None, batch)
+        x, edge_index, _, batch,_ ,_ = self.pool3(x, edge_index, None, batch)
         x3 = torch.cat([gmp(x, batch), gap(x, batch)], dim=1)
 
-        # min_size = min(x1.shape[0], x2.shape[0], x3.shape[0])  # 找到最小 batch size
-        # x1, x2, x3 = x1[:min_size], x2[:min_size], x3[:min_size]  # 截取相同長度
-        x = x1 + x2 + x3  # 相加
+        x = x1 + x2 + x3 
 
         x = F.relu(self.lin1(x))
         x = F.dropout(x, p=self.dropout_ratio, training=self.training)

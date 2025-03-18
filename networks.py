@@ -102,9 +102,9 @@ class ClusterNet(EdgeNet):
 class ASANet(SAGNet):
     def __init__(self, args):
         super(ASANet, self).__init__(args)
-        self.pool1 = ASAPooling(self.nhid, self.pooling_ratio)
-        self.pool2 = ASAPooling(self.nhid, self.pooling_ratio)
-        self.pool3 = ASAPooling(self.nhid, self.pooling_ratio)
+        self.pool1 = ASAPooling(self.nhid, self.pooling_ratio, gnn_intra_cluster=GCNConv(self.nhid, self.nhid))
+        self.pool2 = ASAPooling(self.nhid, self.pooling_ratio, gnn_intra_cluster=GCNConv(self.nhid, self.nhid))
+        self.pool3 = ASAPooling(self.nhid, self.pooling_ratio, gnn_intra_cluster=GCNConv(self.nhid, self.nhid))
 
     def forward(self, data):
         x, edge_index, batch = data.x, data.edge_index, data.batch

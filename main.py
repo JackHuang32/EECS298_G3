@@ -25,7 +25,7 @@ parser.add_argument('--dropout_ratio', type=float, default=0.5,
                     help='dropout ratio')
 parser.add_argument('--dataset', type=str, default='DD',
                     help='DD/PROTEINS/NCI1/NCI109/Mutagenicity')
-parser.add_argument('--epochs', type=int, default=100000,
+parser.add_argument('--epochs', type=int, default=1000,
                     help='maximum number of epochs')
 parser.add_argument('--patience', type=int, default=50,
                     help='patience for earlystopping')
@@ -99,6 +99,8 @@ ax.set_ylabel('Loss')
 ax2.set_xlabel('Epoch')
 ax2.set_ylabel('Acc')
 
+best_model_state = None
+
 for epoch in range(args.epochs):
     model.train()
     for i, data in enumerate(train_loader):
@@ -109,12 +111,12 @@ for epoch in range(args.epochs):
         loss.backward()
         optimizer.step()
         optimizer.zero_grad()
-    val_acc, val_loss = test(model,val_loader)
-    train_acc, train_loss = test(model,train_loader)
-    print("Validation loss:{}\taccuracy:{}".format(val_loss,val_acc))
+    val_acc, val_loss = test(model, val_loader)
+    train_acc, train_loss = test(model, train_loader)
+    print("Validation loss:{}\taccuracy:{}".format(val_loss, val_acc))
     if val_loss < min_loss:
-        torch.save(model.state_dict(),'latest.pth')
-        print("Model saved at epoch{}".format(epoch))
+        best_model_state = model.state_dict()
+        print("Model updated at epoch{}".format(epoch))
         min_loss = val_loss
         patience = 0
     else:
@@ -125,7 +127,7 @@ for epoch in range(args.epochs):
     val_losses.append(val_loss)
     train_accs.append(train_acc)
     val_accs.append(val_acc)
-     
+
 train_loss_line, = ax.plot(train_losses, label='Train Loss')
 val_loss_line, = ax.plot(val_losses, label='Validation Loss')
 train_acc_line, = ax2.plot(train_accs, label='Train Accuracy')
@@ -140,6 +142,6 @@ fig.savefig(f'{args.pooling_method}_loss.png')
 fig2.savefig(f'{args.pooling_method}_acc.png')
 
 model = model.to(args.device)
-model.load_state_dict(torch.load('latest.pth'))
-test_acc,test_loss = test(model,test_loader)
-print("Test accuarcy:{}".format(test_acc))
+model.load_state_dict(best_model_state)
+test_acc, test_loss = test(model, test_loader)
+print(f"method:{args.pooling_method} data:{args.dataset} ratio:{args.pooling_ratio} Test accuracy:{test_acc}")
